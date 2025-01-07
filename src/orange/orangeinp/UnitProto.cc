@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <utility>
 #include <nlohmann/json.hpp>
 
 #include "corecel/Config.hh"
@@ -27,10 +28,10 @@
 #include "ObjectIO.json.hh"
 #include "Transformed.hh"
 
+#include "detail/BuildLogicUtils.hh"
 #include "detail/CsgUnit.hh"
 #include "detail/CsgUnitBuilder.hh"
 #include "detail/InternalSurfaceFlagger.hh"
-#include "detail/PostfixLogicBuilder.hh"
 #include "detail/ProtoBuilder.hh"
 #include "detail/VolumeBuilder.hh"
 
@@ -169,8 +170,6 @@ void UnitProto::build(ProtoBuilder& input) const
     }
 
     // Loop over all volumes to construct
-    detail::PostfixLogicBuilder build_logic{csg_unit.tree,
-                                            sorted_local_surfaces};
     detail::InternalSurfaceFlagger has_internal_surfaces{csg_unit.tree};
     result.volumes.reserve(unit_volumes.size()
                            + static_cast<bool>(csg_unit.background));
@@ -181,10 +180,12 @@ void UnitProto::build(ProtoBuilder& input) const
         VolumeInput vi;
 
         // Construct logic and faces with remapped surfaces
-        auto&& [faces, logic] = build_logic(node_id);
+        auto&& [faces, logic] = detail::build_logic(
+            detail::PostfixBuildLogicPolicy{csg_unit.tree,
+                                            sorted_local_surfaces},
+            node_id);
         vi.faces = std::move(faces);
         vi.logic = std::move(logic);
-
         // Set bounding box
         auto region_iter = csg_unit.regions.find(node_id);
         CELER_ASSERT(region_iter != csg_unit.regions.end());
