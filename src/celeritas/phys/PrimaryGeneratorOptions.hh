@@ -18,6 +18,11 @@
 
 namespace celeritas
 {
+namespace inp
+{
+struct PrimaryGenerator;
+}
+
 //---------------------------------------------------------------------------//
 //! Distribution selection for sampling quantities in a \c PrimaryGenerator
 enum class DistributionSelection
@@ -82,6 +87,10 @@ struct PrimaryGeneratorOptions
 // TODO: move to PrimaryGenerator.hh
 
 using PrimaryGeneratorEngine = std::mt19937;
+
+//---------------------------------------------------------------------------//
+// Convert PrimaryGeneratorOptions to inp::PrimaryGenerator.
+inp::PrimaryGenerator to_input(PrimaryGeneratorOptions const&);
 
 //---------------------------------------------------------------------------//
 // FREE FUNCTIONS

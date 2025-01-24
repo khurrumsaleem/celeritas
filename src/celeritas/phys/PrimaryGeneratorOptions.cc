@@ -7,6 +7,7 @@
 #include "PrimaryGeneratorOptions.hh"
 
 #include "corecel/io/EnumStringMapper.hh"
+#include "celeritas/inp/Events.hh"
 #include "celeritas/random/distribution/DeltaDistribution.hh"
 #include "celeritas/random/distribution/IsotropicDistribution.hh"
 #include "celeritas/random/distribution/UniformBoxDistribution.hh"
@@ -45,6 +46,68 @@ void check_params_size(char const* sampler,
                    << options.params.size() << " elements but the '"
                    << to_cstring(options.distribution)
                    << "' distribution needs exactly " << required_params);
+}
+
+//---------------------------------------------------------------------------//
+// Helper: Convert energy distribution to inp::EnergyDistribution
+inp::EnergyDistribution inp_from_energy(DistributionOptions const& options)
+{
+    char const sampler_name[] = "energy";
+    check_params_size(sampler_name, 1, options);
+    auto const& p = options.params;
+    switch (options.distribution)
+    {
+        case DistributionSelection::delta:
+            return inp::Monoenergetic{units::MevEnergy{p[0]}};
+        default:
+            CELER_VALIDATE(false,
+                           << "invalid distribution type '"
+                           << to_cstring(options.distribution) << "' for "
+                           << sampler_name);
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Convert position distribution to inp::ShapeDistribution
+inp::ShapeDistribution inp_from_position(DistributionOptions const& options)
+{
+    char const sampler_name[] = "position";
+    check_params_size(sampler_name, 3, options);
+    auto const& p = options.params;
+    switch (options.distribution)
+    {
+        case DistributionSelection::delta:
+            return inp::PointShape{Real3{p[0], p[1], p[2]}};
+        case DistributionSelection::box:
+            return inp::UniformBoxShape{Real3{p[0], p[1], p[2]},
+                                        Real3{p[3], p[4], p[5]}};
+        default:
+            CELER_VALIDATE(false,
+                           << "invalid distribution type '"
+                           << to_cstring(options.distribution) << "' for "
+                           << sampler_name);
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Helper: Convert direction distribution to inp::AngleDistribution
+inp::AngleDistribution inp_from_direction(DistributionOptions const& options)
+{
+    char const sampler_name[] = "direction";
+    check_params_size(sampler_name, 3, options);
+    auto const& p = options.params;
+    switch (options.distribution)
+    {
+        case DistributionSelection::delta:
+            return inp::MonodirectionalAngle{Real3{p[0], p[1], p[2]}};
+        case DistributionSelection::isotropic:
+            return inp::IsotropicAngle{};
+        default:
+            CELER_VALIDATE(false,
+                           << "invalid distribution type '"
+                           << to_cstring(options.distribution) << "' for "
+                           << sampler_name);
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -139,6 +202,37 @@ make_direction_sampler(DistributionOptions options)
                            << to_cstring(options.distribution) << "' for "
                            << sampler_name);
     }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Convert PrimaryGeneratorOptions to inp::PrimaryGenerator.
+ */
+inp::PrimaryGenerator to_input(PrimaryGeneratorOptions const& pgo)
+{
+    CELER_VALIDATE(pgo,
+                   << "Invalid PrimaryGeneratorOptions: "
+                   << "ensure all distributions and parameters are correctly "
+                      "set.");
+
+    inp::PrimaryGenerator result;
+
+    // RNG seed
+    result.seed = pgo.seed;
+
+    // PDG numbers
+    result.pdg = pgo.pdg;
+
+    // Number of events and primaries per event
+    result.num_events = pgo.num_events;
+    result.primaries_per_event = pgo.primaries_per_event;
+
+    // Distributions
+    result.shape = inp_from_position(pgo.position);
+    result.angle = inp_from_direction(pgo.direction);
+    result.energy = inp_from_energy(pgo.energy);
+
+    return result;
 }
 
 //---------------------------------------------------------------------------//
