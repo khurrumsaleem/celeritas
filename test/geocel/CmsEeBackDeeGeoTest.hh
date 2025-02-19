@@ -2,11 +2,13 @@
 // Copyright Celeritas contributors: see top-level COPYRIGHT file for details
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \file celeritas/RootTestBase.hh
+//! \file geocel/CmsEeBackDeeGeoTest.hh
 //---------------------------------------------------------------------------//
 #pragma once
 
-#include "ImportedDataTestBase.hh"
+#include <string_view>
+
+#include "GenericGeoTestInterface.hh"
 
 namespace celeritas
 {
@@ -14,22 +16,19 @@ namespace test
 {
 //---------------------------------------------------------------------------//
 /*!
- * Test harness for loading problem data from a ROOT file
+ * Test the four-levels geometry.
  */
-class RootTestBase : public ImportedDataTestBase
+class CmsEeBackDeeGeoTest
 {
-  protected:
-    // Access lazily loaded static ROOT data
-    ImportData const& imported_data() const final;
+  public:
+    static std::string_view geometry_basename() { return "cms-ee-back-dee"; }
 
-    SPConstTrackInit build_init() override { CELER_ASSERT_UNREACHABLE(); }
-    SPConstAction build_along_step() override { CELER_ASSERT_UNREACHABLE(); }
+    CmsEeBackDeeGeoTest(GenericGeoTestInterface* geo_test);
+    void test_accessors() const;
+    void test_trace() const;
 
   private:
-    struct ImportHelper;
-    class CleanupGeantEnvironment;
-
-    static ImportHelper& import_helper();
+    GenericGeoTestInterface* test_;
 };
 
 //---------------------------------------------------------------------------//
