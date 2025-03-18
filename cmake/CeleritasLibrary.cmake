@@ -6,7 +6,8 @@
 CeleritasLibrary
 ----------------
 
-Deprecated file for use by downstream code. TODO: remove in v1.0.
+This file is to be replaced with the wrappers from CeleritasLibraryUtils and
+included automatically in Celeritas and downstream projects.
 
 #]=======================================================================]
 
