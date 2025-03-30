@@ -13,25 +13,15 @@
 #include "corecel/Types.hh"
 #include "corecel/cont/Range.hh"
 #include "corecel/sys/ThreadId.hh"
-#include "celeritas/io/ImportData.hh"
-#include "celeritas/io/ImporterInterface.hh"
-#include "celeritas/user/RootStepWriterInput.hh"
 
 #ifdef _OPENMP
 #    include <omp.h>
 #endif
 
-#include "corecel/cont/Span.hh"
-#include "corecel/io/StringUtils.hh"
 #include "corecel/sys/Device.hh"
 #include "celeritas/Types.hh"
-#include "celeritas/ext/GeantImporter.hh"
-#include "celeritas/ext/GeantSetup.hh"
-#include "celeritas/ext/RootImporter.hh"
 #include "celeritas/global/CoreParams.hh"
 #include "celeritas/inp/StandaloneInput.hh"
-#include "celeritas/phys/PrimaryGeneratorOptions.hh"
-#include "celeritas/phys/Process.hh"
 #include "celeritas/setup/StandaloneInput.hh"
 
 #include "RunnerInput.hh"
@@ -50,7 +40,7 @@ Runner::Runner(RunnerInput const& old_inp)
     // Convert to new format and set up problem
     inp::StandaloneInput si = to_input(old_inp);
     auto loaded = setup::standalone_input(si);
-    core_params_ = std::move(loaded.core_params);
+    core_params_ = std::move(loaded.problem.core_params);
     CELER_ASSERT(core_params_);
     events_ = std::move(loaded.events);
 
