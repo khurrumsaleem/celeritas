@@ -19,6 +19,8 @@
 #include "corecel/math/Algorithms.hh"
 #include "corecel/sys/ActionRegistry.hh"
 #include "geocel/UnitUtils.hh"
+#include "geocel/random/IsotropicDistribution.hh"
+#include "celeritas/LArSphereBase.hh"
 #include "celeritas/alongstep/AlongStepUniformMscAction.hh"
 #include "celeritas/em/params/UrbanMscParams.hh"
 #include "celeritas/global/Stepper.hh"
@@ -27,10 +29,8 @@
 #include "celeritas/optical/detail/OffloadParams.hh"
 #include "celeritas/phys/ParticleParams.hh"
 #include "celeritas/phys/Primary.hh"
-#include "celeritas/random/distribution/IsotropicDistribution.hh"
 
 #include "celeritas_test.hh"
-#include "../LArSphereBase.hh"
 
 using celeritas::detail::OpticalOffloadState;
 
