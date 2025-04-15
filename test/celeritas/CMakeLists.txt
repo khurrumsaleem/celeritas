@@ -248,8 +248,8 @@ else()
 endif()
 
 celeritas_add_test(field/Fields.test.cc)
-celeritas_add_test(field/Steppers.test.cc ${_fixme_cgs})
-celeritas_add_test(field/FieldDriver.test.cc ${_fixme_cgs})
+celeritas_add_test(field/Integrators.test.cc ${_fixme_cgs})
+celeritas_add_test(field/FieldSubstepper.test.cc ${_fixme_cgs})
 celeritas_add_test(field/FieldPropagator.test.cc
   LINK_LIBRARIES ${_core_geo_libs}
   ${_fieldprop_filter}
