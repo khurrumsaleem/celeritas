@@ -41,7 +41,7 @@ class NonuniformGridBuilder
     Grid operator()(inp::Grid const&);
 
   private:
-    Values const& values_;
+    Values* values_;
     DedupeCollectionBuilder<real_type> reals_;
 };
 

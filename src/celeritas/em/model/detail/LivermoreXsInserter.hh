@@ -76,7 +76,8 @@ void LivermoreXsInserter::operator()(ImportLivermorePE const& inp)
 
     LivermoreElement el;
 
-    // Add tabulated total cross sections
+    // Add tabulated total cross sections. High energy cross sections use
+    // spline interpolation if enabled; low energy cross sections use linear.
     if (inp.xs_lo)
     {
         // Z < 3 have no low-energy cross sections
