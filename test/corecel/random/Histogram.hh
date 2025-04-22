@@ -24,7 +24,20 @@ namespace test
 /*!
  * Calculate the histogram of a set of values.
  *
- * This uses double precision since values are being accumulated and tallied.
+ * Values outside of the input \c domain are saved to the underflow and
+ * overflow bins. All bins are half-open except for the rightmost bin, which
+ * will include values equal to the upper domain boundary.
+ *
+ * To test that all samples are within the domain:
+ * \code
+     EXPECT_EQ(0, hist.underflow())
+       << "Encountered values as low as " << hist.min();
+     EXPECT_EQ(0, hist.overflow())
+       << "Encountered values as high as " << hist.max();
+ * \endcode
+ *
+ * \note This class uses double precision since values are being accumulated
+ * and tallied and only on host.
  */
 class Histogram
 {
@@ -37,8 +50,8 @@ class Histogram
     //!@}
 
   public:
-    // Construct with number of bins and range
-    Histogram(size_type num_bins, Dbl2 range);
+    // Construct with number of bins and domain
+    Histogram(size_type num_bins, Dbl2 domain);
 
     // Update the histogram with a value
     inline void operator()(double value);
@@ -46,14 +59,15 @@ class Histogram
     // Update the histogram with a vector of values
     inline void operator()(VecDbl const& values);
 
-    // Get the histogram
+    //! Get the histogram
     VecCount const& counts() const { return counts_; }
 
     // Get the result as a probability density
     VecDbl calc_density() const;
 
-    // Get the overflow and overflow counts
+    //! Get the number of samples below the lower bound
     size_type underflow() const { return out_of_range_[Bound::lo]; }
+    //! Get the number of samples above the upper bound
     size_type overflow() const { return out_of_range_[Bound::hi]; }
 
     // Get the minimum and maximum values encountered
@@ -75,9 +89,6 @@ class Histogram
 //---------------------------------------------------------------------------//
 /*!
  * Update the histogram with a value.
- *
- * Values outside of \c range are ignored. All bins are half-open except for
- * the rightmost bin, which will include values equal to the upper edge.
  */
 void Histogram::operator()(double value)
 {

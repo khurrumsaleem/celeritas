@@ -9,6 +9,7 @@
 #include "corecel/cont/Range.hh"
 #include "corecel/grid/Interpolator.hh"
 #include "corecel/math/ArrayUtils.hh"
+#include "corecel/random/DiagnosticRngEngine.hh"
 #include "corecel/random/Histogram.hh"
 #include "corecel/random/distribution/GenerateCanonical.hh"
 #include "geocel/UnitUtils.hh"
@@ -31,6 +32,69 @@
 
 namespace celeritas
 {
+namespace test
+{
+//---------------------------------------------------------------------------//
+TEST(Distributions, UrbanLargeAngleDistribution)
+{
+    constexpr int num_samples{10000};
+    std::vector<std::vector<double>> angle_dist;
+
+    DiagnosticRngEngine<std::mt19937> rng;
+
+    constexpr auto samples_per_real
+        = (CELERITAS_REAL_TYPE == CELERITAS_REAL_TYPE_FLOAT ? 1 : 2);
+
+    // Separately sample tau = 1e-14 due to platform-dependent numerical issues
+    {
+        UrbanLargeAngleDistribution sample_angle{real_type(1e-14)};
+        for (int i = 0; i < num_samples; ++i)
+        {
+            auto mu = sample_angle(rng);
+            EXPECT_LT(real_type(0.9999), mu);
+            EXPECT_LE(mu, real_type(1));
+        }
+        EXPECT_EQ(2 * samples_per_real * num_samples, rng.exchange_count());
+    }
+
+    // Sample larger tau
+    for (real_type tau : {1e-8, 1e-4, 1e-2, 0.1, 0.5, 1.0, 2.0, 10.0})
+    {
+        Histogram bin_angle(8, {-1, 1});
+
+        UrbanLargeAngleDistribution sample_angle{tau};
+        for (int i = 0; i < num_samples; ++i)
+        {
+            bin_angle(sample_angle(rng));
+        }
+        angle_dist.push_back(bin_angle.calc_density());
+        EXPECT_EQ(2 * samples_per_real * num_samples, rng.exchange_count());
+
+        EXPECT_EQ(0, bin_angle.underflow())
+            << "Encountered values as low as " << bin_angle.min();
+        EXPECT_EQ(0, bin_angle.overflow())
+            << "Encountered values as high as " << bin_angle.max();
+    }
+
+    if (CELERITAS_REAL_TYPE == CELERITAS_REAL_TYPE_DOUBLE)
+    {
+        static std::vector<double> const expected_angle_dist[] = {
+            {0, 0, 0, 0, 0, 0, 0, 4},
+            {0, 0, 0, 0, 0, 0, 0, 4},
+            {0.002, 0.0012, 0.0012, 0.0004, 0.0012, 0.0008, 0.002, 3.9912},
+            {0.014, 0.0104, 0.0124, 0.0116, 0.0144, 0.0172, 0.1188, 3.8012},
+            {0.0636, 0.064, 0.0852, 0.1292, 0.2464, 0.4964, 1.016, 1.8992},
+            {0.1424, 0.1784, 0.2292, 0.3416, 0.4732, 0.6324, 0.8588, 1.144},
+            {0.318, 0.3616, 0.4148, 0.488, 0.512, 0.5868, 0.6296, 0.6892},
+            {0.5148, 0.48, 0.516, 0.5212, 0.4884, 0.4848, 0.4868, 0.508},
+        };
+        EXPECT_VEC_SOFT_EQ(expected_angle_dist, angle_dist) << repr(angle_dist);
+    }
+}
+
+//---------------------------------------------------------------------------//
+}  // namespace test
+
 namespace detail
 {
 namespace test
@@ -46,7 +110,7 @@ constexpr bool using_vecgeom_surface = CELERITAS_VECGEOM_SURFACE
                                               == CELERITAS_CORE_GEO_VECGEOM;
 
 //---------------------------------------------------------------------------//
-TEST(UrbanPositronCorrectorTest, all)
+TEST(Details, UrbanPositronCorrector)
 {
     UrbanPositronCorrector calc_h{1.0};  // Hydrogen
     UrbanPositronCorrector calc_w{74.0};  // Tungsten
@@ -198,7 +262,7 @@ TEST_F(UrbanMscTest, step_conversion)
         MscStepToGeo calc_geom_path(
             msc_params_->host_ref(), helper, energy, lambda, range);
 
-        LogInterp calc_pstep({0, real_type{0.9} * params.limit_min_fix()},
+        LogInterp calc_pstep({0, real_type{0.9} * params.min_step},
                              {static_cast<real_type>(pstep_points), range});
         for (auto ppt : celeritas::range(pstep_points + 1))
         {
@@ -222,7 +286,7 @@ TEST_F(UrbanMscTest, step_conversion)
             MscStepFromGeo geo_to_true(
                 msc_params_->host_ref().params, msc_step, range, lambda);
             LogInterp calc_gstep(
-                {0, real_type{0.9} * params.limit_min_fix()},
+                {0, real_type{0.9} * params.min_step},
                 {static_cast<real_type>(gstep_points), gp.step});
             for (auto gpt : celeritas::range(gstep_points + 1))
             {
@@ -335,7 +399,7 @@ TEST_F(UrbanMscTest, TEST_IF_CELERITAS_DOUBLE(step_limit))
             for (int i = 0; i < num_samples; ++i)
             {
                 real_type step = phys.dedx_range();
-                EXPECT_FALSE(step < msc_params.params.limit_min_fix());
+                EXPECT_FALSE(step < msc_params.params.min_step);
                 if (alg == Algorithm::minimal)
                 {
                     // Minimal step limit algorithm
@@ -557,7 +621,7 @@ TEST_F(UrbanMscTest, msc_scattering)
         bool displaced;
         std::tie(true_path, displaced) = [&]() -> std::pair<real_type, bool> {
             EXPECT_FALSE(phys.msc_range());
-            if (this_pstep < msc_params.params.limit_min_fix()
+            if (this_pstep < msc_params.params.min_step
                 || safety >= helper.max_step())
             {
                 // Small step or far from boundary
