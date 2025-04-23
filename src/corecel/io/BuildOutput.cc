@@ -40,6 +40,7 @@ void BuildOutput::output(JsonPimpl* j) const
     {                                                 \
         options.push_back(celeritas::tolower(#NAME)); \
     }
+            CO_ADD_OPT(COVFIE);
             CO_ADD_OPT(CUDA);
             CO_ADD_OPT(GEANT4);
             CO_ADD_OPT(HEPMC3);
@@ -73,6 +74,7 @@ void BuildOutput::output(JsonPimpl* j) const
     {                                                      \
         deps[#NAME] = std::string(cmake::LOWER##_version); \
     }
+            CO_ADD_COND_VERS(COVFIE, covfie, covfie);
             CO_ADD_COND_VERS(CUDA, CUDA, cuda);
             CO_ADD_COND_VERS(CUDA, Thrust, thrust);
             CO_ADD_COND_VERS(GEANT4, CLHEP, clhep);
