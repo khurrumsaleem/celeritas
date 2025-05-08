@@ -36,6 +36,7 @@
 #include "celeritas/em/model/LivermorePEModel.hh"
 #include "celeritas/em/params/AtomicRelaxationParams.hh"  // IWYU pragma: keep
 #include "celeritas/global/ActionInterface.hh"
+#include "celeritas/grid/ElementCdfCalculator.hh"
 #include "celeritas/grid/RangeGridCalculator.hh"
 #include "celeritas/grid/XsCalculator.hh"
 #include "celeritas/grid/XsGridData.hh"
@@ -738,34 +739,8 @@ void PhysicsParams::build_model_tables(MaterialParams const& mats,
                     // or on-the-fly xs calculation won't have micro xs grids
                     continue;
                 }
-
-                // Get the number of grid points: the energy grids are the
-                // same for each element in the material
-                CELER_ASSERT(grids.size() == elements.size());
-                CELER_ASSERT(grids.front().lower && !grids.front().upper);
-
-                // Calculate the cross section CDF
-                for (auto i : range(grids.front().lower.y.size()))
-                {
-                    double accum{0};
-                    for (auto j : range(elements.size()))
-                    {
-                        CELER_ASSERT(grids[j].lower);
-                        auto& value = grids[j].lower.y[i];
-                        accum += value * elements[j].fraction;
-                        value = accum;
-                    }
-                    if (accum > 0)
-                    {
-                        // Normalize the CDF
-                        double norm = 1 / accum;
-                        for (auto j : range(elements.size() - 1))
-                        {
-                            grids[j].lower.y[i] *= norm;
-                        }
-                        grids.back().lower.y[i] = 1;
-                    }
-                }
+                // Calculate the cross section CDFs in place
+                ElementCdfCalculator{elements}(grids);
 
                 // Construct grids for each element in the material
                 std::vector<ValueGridId> temp_grid_ids(elements.size());
