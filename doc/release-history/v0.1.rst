@@ -5,7 +5,7 @@ Series 0.1
 ==========
 
 Major development version 0.1 can be cited through its Zenodo code release
-:cite:t:`celeritas-0.1`.
+:cite:p:`celeritas-0-1`.
 
 .. _release_v0.1.5:
 
@@ -152,7 +152,7 @@ Bug fixes
 * Fix ORANGE reentrant boundary crossings by *(@sethrj, #501)*
 
 Internal changes
-^^^^^^^^^^^^----
+^^^^^^^^^^^^^^^^
 
 * Rewrite field tests by *(@sethrj, #471)*
 * Add range-to-step tests and remove min by *(@sethrj, #479)*
