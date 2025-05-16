@@ -11,10 +11,8 @@
 #include "corecel/Assert.hh"
 #include "corecel/Macros.hh"
 #include "corecel/Types.hh"
-#include "corecel/data/Collection.hh"
 #include "corecel/math/ArrayOperators.hh"
 #include "corecel/math/ArrayUtils.hh"
-#include "corecel/random/distribution/BernoulliDistribution.hh"
 #include "corecel/random/distribution/RejectionSampler.hh"
 #include "corecel/random/distribution/UniformRealDistribution.hh"
 #include "celeritas/grid/NonuniformGridCalculator.hh"
@@ -173,7 +171,7 @@ CELER_FUNCTION TrackInitializer CherenkovGenerator::operator()(Generator& rng)
         = rotate(from_spherical(-std::sqrt(sin_theta_sq), phi), dir_);
 
     // Sample fraction along the step
-    UniformRealDistribution sample_step_fraction;
+    UniformRealDistribution<> sample_step_fraction;
     real_type u;
     do
     {
