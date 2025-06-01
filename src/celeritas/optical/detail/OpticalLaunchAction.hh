@@ -23,7 +23,6 @@ namespace celeritas
 template<class P, template<MemSpace M> class S>
 class ActionGroups;
 class CoreParams;
-class OffloadParams;
 
 namespace optical
 {
@@ -49,7 +48,6 @@ class OpticalLaunchAction : public AuxParamsInterface,
   public:
     //!@{
     //! \name Type aliases
-    using SPOffloadParams = std::shared_ptr<OffloadParams>;
     using SPConstMaterial = std::shared_ptr<optical::MaterialParams const>;
     //!@}
 
@@ -57,7 +55,6 @@ class OpticalLaunchAction : public AuxParamsInterface,
     {
         SPConstMaterial material;
         std::vector<optical::Model::ModelBuilder> model_builders;
-        SPOffloadParams offload;
         size_type num_track_slots{};
         size_type initializer_capacity{};
 
@@ -66,8 +63,7 @@ class OpticalLaunchAction : public AuxParamsInterface,
         //! True if all input is assigned and valid
         explicit operator bool() const
         {
-            return material && offload && num_track_slots > 0
-                   && initializer_capacity > 0;
+            return material && num_track_slots > 0 && initializer_capacity > 0;
         }
     };
 
@@ -122,9 +118,6 @@ class OpticalLaunchAction : public AuxParamsInterface,
     {
         return *optical_params_;
     }
-    //! Offload params
-    OffloadParams const& offload_params() const { return *offload_params_; }
-
     //!@}
 
   private:
@@ -136,7 +129,6 @@ class OpticalLaunchAction : public AuxParamsInterface,
 
     ActionId action_id_;
     AuxId aux_id_;
-    SPOffloadParams offload_params_;
     SPOpticalParams optical_params_;
     SPActionGroups optical_actions_;
     size_type state_size_;
