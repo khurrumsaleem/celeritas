@@ -65,8 +65,6 @@ struct VolumeInstance
 //---------------------------------------------------------------------------//
 /*!
  * Define a graph of geometry elements.
- *
- * \todo Construct from in-memory Geant4
  */
 struct Volumes
 {
@@ -77,6 +75,33 @@ struct Volumes
 
     //! True if at least one node is defined
     explicit operator bool() const { return !volumes.empty(); }
+};
+
+//---------------------------------------------------------------------------//
+/*!
+ * Define a single surface, the boundary around or between volumes.
+ *
+ * An "interface" surface is an (exiting, entering) pair of volume instances.
+ * A "boundary" surface is the entire surface of a volume.
+ */
+struct Surface
+{
+    using Interface = std::pair<VolumeInstanceId, VolumeInstanceId>;
+    using Boundary = VolumeId;
+
+    std::variant<Interface, Boundary> surface;
+    Label label;
+};
+
+//---------------------------------------------------------------------------//
+/*!
+ * List all surfaces in a problem.
+ */
+struct Surfaces
+{
+    using VecSurface = std::vector<Surface>;
+
+    VecSurface surfaces;
 };
 
 //---------------------------------------------------------------------------//
@@ -98,6 +123,7 @@ struct Model
     // TODO: Materials
     // TODO: Regions
     Volumes volumes;
+    Surfaces surfaces;
 };
 
 //---------------------------------------------------------------------------//
