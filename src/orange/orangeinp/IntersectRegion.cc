@@ -7,12 +7,13 @@
 #include "IntersectRegion.hh"
 
 #include <cmath>
+#include <tuple>
 
+#include "corecel/Assert.hh"
 #include "corecel/Constants.hh"
 #include "corecel/cont/ArrayIO.hh"
 #include "corecel/cont/Range.hh"
 #include "corecel/io/JsonPimpl.hh"
-#include "corecel/io/Repr.hh"
 #include "corecel/math/SoftEqual.hh"
 #include "geocel/BoundingBox.hh"
 #include "geocel/Types.hh"
@@ -261,7 +262,7 @@ void Cylinder::output(JsonPimpl* j) const
 // ELLIPSOID
 //---------------------------------------------------------------------------//
 /*!
- * Construct with radii.
+ * Construct with radius along each Cartesian axis.
  */
 Ellipsoid::Ellipsoid(Real3 const& radii) : radii_{radii}
 {
@@ -945,34 +946,46 @@ void GenPrism::output(JsonPimpl* j) const
 }
 
 //---------------------------------------------------------------------------//
-// INFSLAB
+// INFPLANE
 //---------------------------------------------------------------------------//
 /*!
- * Construct from lower and upper z-planes.
+ * Construct with sense, axis, and position.
  */
-InfSlab::InfSlab(real_type lower, real_type upper)
-    : lower_{lower}, upper_{upper}
+InfPlane::InfPlane(Sense sense, Axis axis, real_type position)
+    : sense_{sense}, axis_{axis}, position_{position}
 {
-    CELER_VALIDATE(lower_ < upper_,
-                   << "invalid z planes, lower plane z value " << lower_
-                   << " must be less than upper plane z value" << upper_);
+    CELER_EXPECT(axis_ < Axis::size_);
+    CELER_EXPECT(!std::isnan(position));
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * Build surfaces.
+ * Build the surface.
  */
-void InfSlab::build(IntersectSurfaceBuilder& insert_surface) const
+void InfPlane::build(IntersectSurfaceBuilder& insert_surface) const
 {
-    insert_surface(Sense::outside, PlaneZ{lower_});
-    insert_surface(Sense::inside, PlaneZ{upper_});
+    // NOTE: these use the Plane surface aliases.
+    switch (axis_)
+    {
+        case Axis::x:
+            insert_surface(sense_, PlaneX{position_});
+            break;
+        case Axis::y:
+            insert_surface(sense_, PlaneY{position_});
+            break;
+        case Axis::z:
+            insert_surface(sense_, PlaneZ{position_});
+            break;
+        default:
+            CELER_ASSERT_UNREACHABLE();
+    }
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * Write output to the given JSON object.
  */
-void InfSlab::output(JsonPimpl* j) const
+void InfPlane::output(JsonPimpl* j) const
 {
     to_json_pimpl(j, *this);
 }

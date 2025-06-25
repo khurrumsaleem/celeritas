@@ -181,7 +181,7 @@ class Cylinder final : public IntersectRegionInterface
 class Ellipsoid final : public IntersectRegionInterface
 {
   public:
-    // Construct with radius
+    // Construct with radius along each Cartesian axis
     explicit Ellipsoid(Real3 const& radii);
 
     // Build surfaces
@@ -503,31 +503,39 @@ class GenPrism final : public IntersectRegionInterface
 
 //---------------------------------------------------------------------------//
 /*!
- * An infinite slab bound by lower and upper z-planes.
+ * An axis-aligned infinite half-space to use for truncation operations.
+ *
+ * An "inside" sense means to include everything *below* the position on the
+ * axis, and an "outside" sense means to include only what's *above* the
+ * position.
  */
-class InfSlab final : public IntersectRegionInterface
+class InfPlane : public IntersectRegionInterface
 {
   public:
-    // Construct from lower and upper z-planes
-    InfSlab(real_type lower, real_type upper);
+    // Construct with sense, axis, and position
+    InfPlane(Sense sense, Axis axis, real_type position);
 
     // Build surfaces
     void build(IntersectSurfaceBuilder&) const final;
 
-    // Write output to the given JSON object
+    // Output to JSON
     void output(JsonPimpl*) const final;
 
     //// ACCESSORS ////
 
-    //! Lower z-plane
-    real_type lower() const { return lower_; }
+    //! Get the sense (inside or outside)
+    Sense sense() const { return sense_; }
 
-    //! Upper z-plane
-    real_type upper() const { return upper_; }
+    //! Get the axis (x, y, or z)
+    Axis axis() const { return axis_; }
+
+    //! Get the position along the axis
+    real_type position() const { return position_; }
 
   private:
-    real_type lower_;
-    real_type upper_;
+    Sense sense_;
+    Axis axis_;
+    real_type position_;
 };
 
 //---------------------------------------------------------------------------//
