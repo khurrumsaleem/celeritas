@@ -9,7 +9,6 @@
 #include <memory>
 #include <optional>
 
-#include "corecel/data/AuxInterface.hh"
 #include "corecel/io/Label.hh"
 #include "corecel/math/NumericLimits.hh"
 #include "celeritas/Types.hh"
@@ -73,6 +72,7 @@ class OpticalCollector
     using SPConstMaterial = std::shared_ptr<optical::MaterialParams const>;
     using SPConstScintillation = std::shared_ptr<ScintillationParams const>;
     using OpticalBufferSize = GeneratorCounters<size_type>;
+    using SPConstOpticalParams = std::shared_ptr<optical::CoreParams const>;
     //!@}
 
     struct Input
@@ -112,6 +112,22 @@ class OpticalCollector
     // Construct with core data and optical params
     OpticalCollector(CoreParams const&, Input&&);
 
+    //// ACCESSORS ////
+
+    //! Access optical params
+    SPConstOpticalParams const& optical_params() const
+    {
+        return optical_params_;
+    }
+
+    // Access Cherenkov params (may be null)
+    SPConstCherenkov cherenkov() const;
+
+    // Access scintillation params (may be null)
+    SPConstScintillation scintillation() const;
+
+    //// GENERATOR MANAGEMENT ////
+
     // Get the generator registry
     GeneratorRegistry const& gen_reg() const;
 
@@ -138,6 +154,7 @@ class OpticalCollector
 
     //// DATA ////
 
+    SPConstOpticalParams optical_params_;
     SPGatherAction gather_;
     SPCherenkovOffload cherenkov_offload_;
     SPScintOffload scint_offload_;
