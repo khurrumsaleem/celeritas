@@ -93,9 +93,9 @@ class OpticalLaunchAction : public AuxParamsInterface,
     //!@{
     //! \name BeginRunAction interface
 
-    // Greate the action groups and get a pointer to the aux data
+    // Create the action groups and get a pointer to the aux data
     void begin_run(CoreParams const&, CoreStateHost&) final;
-    // Greate the action groups and get a pointer to the aux data
+    // Create the action groups and get a pointer to the aux data
     void begin_run(CoreParams const&, CoreStateDevice&) final;
     //!@}
 

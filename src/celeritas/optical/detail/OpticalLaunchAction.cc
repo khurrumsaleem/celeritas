@@ -57,7 +57,7 @@ OpticalLaunchAction::OpticalLaunchAction(ActionId action_id,
 
 //---------------------------------------------------------------------------//
 /*!
- * Greate the action groups and get a pointer to the aux data.
+ * Create the action groups and get a pointer to the aux data.
  */
 void OpticalLaunchAction::begin_run(CoreParams const&, CoreStateHost& state)
 {
@@ -66,7 +66,7 @@ void OpticalLaunchAction::begin_run(CoreParams const&, CoreStateHost& state)
 
 //---------------------------------------------------------------------------//
 /*!
- * Greate the action groups and get a pointer to the aux data.
+ * Create the action groups and get a pointer to the aux data.
  */
 void OpticalLaunchAction::begin_run(CoreParams const&, CoreStateDevice& state)
 {
