@@ -2271,7 +2271,6 @@ void TwoBoxesGeoTest::test_model() const
 void TwoBoxesGeoTest::test_accessors() const
 {
     auto const& geo = *test_->geometry_interface();
-
     auto expected_bbox = calc_expected_bbox(
         test_->geometry_type(), {-500., -500., -500.}, {500., 500., 500.});
     auto const& bbox = geo.bbox();
