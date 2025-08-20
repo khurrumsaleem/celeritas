@@ -45,6 +45,7 @@ class OrangeParams final : public GeoParamsInterface,
     //! \name Type aliases
     using SurfaceMap = LabelIdMultiMap<ImplSurfaceId>;
     using UniverseMap = LabelIdMultiMap<UniverseId>;
+    using SPConstVolumes = std::shared_ptr<VolumeParams const>;
     //!@}
 
   public:
@@ -59,7 +60,7 @@ class OrangeParams final : public GeoParamsInterface,
     // Build from a Geant4 geometry
     static std::shared_ptr<OrangeParams>
     from_geant(std::shared_ptr<GeantGeoParams const> const& geo,
-               VolumeParams const& volumes);
+               SPConstVolumes volumes);
 
     // Build from a Geant4 geometry (no volumes available?)
     static std::shared_ptr<OrangeParams>
@@ -74,7 +75,7 @@ class OrangeParams final : public GeoParamsInterface,
     OrangeParams(OrangeInput&& input);
 
     // ADVANCED usage: construct from explicit host data with volumes
-    OrangeParams(OrangeInput&& input, VolumeParams const& volumes);
+    OrangeParams(OrangeInput&& input, SPConstVolumes&& volumes);
 
     // Default destructor to anchor vtable
     ~OrangeParams() final;
@@ -115,6 +116,9 @@ class OrangeParams final : public GeoParamsInterface,
     // Get the canonical volume IDs corresponding to an implementation volume
     inline VolumeId volume_id(ImplVolumeId) const final;
 
+    // Get the volume instance ID corresponding to an implementation volume
+    inline VolumeInstanceId volume_instance_id(ImplVolumeId) const;
+
     //// DATA ACCESS ////
 
     //! Reference to CPU geometry data
@@ -130,6 +134,9 @@ class OrangeParams final : public GeoParamsInterface,
     ImplVolumeMap impl_vol_labels_;
     BBox bbox_;
     bool supports_safety_{};
+
+    // Retain volumes since we save a pointer for debugging
+    SPConstVolumes volumes_;
 
     // Host/device storage and reference
     CollectionMirror<OrangeParamsData> data_;
@@ -207,16 +214,22 @@ GeantPhysicalInstance OrangeParams::id_to_geant(VolumeInstanceId) const
 VolumeId OrangeParams::volume_id(ImplVolumeId iv_id) const
 {
     auto const& volume_id_map = this->host_ref().volume_ids;
-    CELER_EXPECT(volume_id_map.empty() || iv_id < volume_id_map.size());
-
-    if (CELER_UNLIKELY(volume_id_map.empty()))
-    {
-        // Probably standalone geometry
-        CELER_ASSERT(iv_id);
-        return id_cast<VolumeId>(iv_id.unchecked_get());
-    }
-
+    CELER_EXPECT(iv_id < volume_id_map.size());
     return volume_id_map[iv_id];
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Get the canonical volume instance corresponding to an implementation volume.
+ *
+ * This may be null if the local volume corresponds to a "background" volume or
+ * "outside".
+ */
+VolumeInstanceId OrangeParams::volume_instance_id(ImplVolumeId iv_id) const
+{
+    auto const& volume_inst_id_map = this->host_ref().volume_instance_ids;
+    CELER_EXPECT(iv_id < volume_inst_id_map.size());
+    return volume_inst_id_map[iv_id];
 }
 
 //---------------------------------------------------------------------------//
