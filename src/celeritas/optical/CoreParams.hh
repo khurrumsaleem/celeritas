@@ -49,7 +49,6 @@ class CoreParams final : public ParamsDataInterface<CoreParamsData>
     using SPActionRegistry = std::shared_ptr<ActionRegistry>;
     using SPGeneratorRegistry = std::shared_ptr<GeneratorRegistry>;
     using SPConstDetectors = std::shared_ptr<SDParams const>;
-    using VecLabel = std::vector<Label>;
 
     template<MemSpace M>
     using ConstRef = CoreParamsData<Ownership::const_reference, M>;
@@ -65,8 +64,7 @@ class CoreParams final : public ParamsDataInterface<CoreParamsData>
         SPConstRng rng;
         SPConstSurface surface;
         SPConstSurfacePhysics surface_physics;
-
-        std::optional<VecLabel> detector_labels;
+        SPConstDetectors detectors;
 
         SPActionRegistry action_reg;
         SPGeneratorRegistry gen_reg;

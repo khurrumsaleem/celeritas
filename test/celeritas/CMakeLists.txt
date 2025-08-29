@@ -191,9 +191,6 @@ celeritas_add_test(ext/GeantImporter.test.cc
   LINK_LIBRARIES nlohmann_json::nlohmann_json
   FILTER ${_import_filter}
 )
-celeritas_add_test(ext/GeantVolumeMapper.test.cc ${_needs_geant4}
-  LINK_LIBRARIES ${Geant4_LIBRARIES} Celeritas::orange)
-
 
 celeritas_add_test(ext/RootImporter.test.cc ${_needs_root})
 celeritas_add_test(ext/RootJsonDumper.test.cc ${_needs_root})
@@ -209,15 +206,9 @@ if(CELERITAS_USE_Geant4)
     LINK_LIBRARIES testcel_celeritas_g4
     ENVIRONMENT "${CELER_G4ENV}")
 
-  set(_ltu_tests
-    "MultiLevelTest.*"
-  )
-  if(CELERITAS_CORE_GEO STREQUAL "VecGeom")
-    # Geant4 doesn't yet have independent volume instance IDs for replicas
-    list(APPEND _ltu_tests
-      "ReplicaTest.*"
-    )
-  elseif(CELERITAS_CORE_GEO STREQUAL "ORANGE")
+  set(_ltu_tests)
+  if(CELERITAS_CORE_GEO STREQUAL "ORANGE")
+    # ORANGE does not yet support touchable-based mapping
     set(_ltu_tests DISABLE)
   endif()
 
