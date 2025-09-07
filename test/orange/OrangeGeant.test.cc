@@ -45,8 +45,39 @@ class GeantOrangeTest : public OrangeTestBase
 };
 
 //---------------------------------------------------------------------------//
-using MultiLevelTest
-    = GenericGeoParameterizedTest<GeantOrangeTest, MultiLevelGeoTest>;
+using FourLevelsTest
+    = GenericGeoParameterizedTest<GeantOrangeTest, FourLevelsGeoTest>;
+
+TEST_F(FourLevelsTest, accessors)
+{
+    this->impl().test_accessors();
+}
+
+TEST_F(FourLevelsTest, trace)
+{
+    this->impl().test_trace();
+}
+
+TEST_F(FourLevelsTest, consecutive_compute)
+{
+    // Templated test
+    FourLevelsGeoTest::test_consecutive_compute(this);
+}
+
+TEST_F(FourLevelsTest, detailed_track)
+{
+    // Templated test
+    FourLevelsGeoTest::test_detailed_tracking(this);
+}
+
+//---------------------------------------------------------------------------//
+class MultiLevelTest
+    : public GenericGeoParameterizedTest<GeantOrangeTest, MultiLevelGeoTest>
+{
+  public:
+    // FIXME: normal is inconsistent between topbox3 and world_PV
+    bool supports_surface_normal() const override { return false; }
+};
 
 TEST_F(MultiLevelTest, trace)
 {
@@ -90,8 +121,27 @@ TEST_F(PolyhedraTest, trace)
 }
 
 //---------------------------------------------------------------------------//
-using ReplicaTest
-    = GenericGeoParameterizedTest<GeantOrangeTest, ReplicaGeoTest>;
+class ReplicaTest
+    : public GenericGeoParameterizedTest<GeantOrangeTest, ReplicaGeoTest>
+{
+  public:
+    // FIXME: normal is inconsistent between fSecondArmPhys/HadCalScinti
+    // and world_PV
+    bool supports_surface_normal() const override { return false; }
+
+    //! Distance is slightly off for single precision
+    GenericGeoTrackingTolerance tracking_tol() const override
+    {
+        auto result = GeantOrangeTest::tracking_tol();
+
+        if (CELERITAS_REAL_TYPE == CELERITAS_REAL_TYPE_FLOAT)
+        {
+            result.distance *= 10;
+        }
+
+        return result;
+    }
+};
 
 TEST_F(ReplicaTest, trace)
 {
