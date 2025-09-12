@@ -28,8 +28,8 @@
 #include "corecel/Config.hh"
 
 #include "corecel/io/Logger.hh"
-#include "corecel/io/ScopedTimeAndRedirect.hh"
 #include "corecel/io/StringUtils.hh"
+#include "corecel/sys/Environment.hh"
 #include "corecel/sys/TypeDemangler.hh"
 #include "geocel/GeantUtils.hh"
 #include "geocel/ScopedGeantExceptionHandler.hh"
@@ -225,7 +225,6 @@ G4RunManager& IntegrationTestBase::run_manager()
         CELER_LOG(status) << "Creating run manager";
         // Run manager writes output that cannot be redirected with
         // GeantLoggerAdapter: capture all output from this section
-        ScopedTimeAndRedirect scoped_time{"G4RunManager"};
         ScopedGeantExceptionHandler scoped_exceptions;
 
         // Access the particle table before creating the run manager, so that
@@ -320,7 +319,10 @@ SetupOptions IntegrationTestBase::make_setup_options()
     opts.make_along_step = celeritas::UniformAlongStepFactory();
 
     // Save diagnostic file to a unique name
-    opts.output_file = this->make_unique_filename(".out.json");
+    std::string ext = "-" + celeritas::getenv("CELER_OFFLOAD");
+    ext += "-" + celeritas::tolower(celeritas::getenv("G4RUN_MANAGER_TYPE"));
+    ext += ".out.json";
+    opts.output_file = this->make_unique_filename(ext);
     return opts;
 }
 
