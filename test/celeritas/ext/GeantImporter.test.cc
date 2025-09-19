@@ -332,10 +332,8 @@ class LarSphere : public GeantImporterTest
     GeantPhysicsOptions build_geant_options() const override
     {
         auto opts = GeantImporterTest::build_geant_options();
-        opts.optical.absorption = true;
-        opts.optical.rayleigh_scattering = true;
-        opts.optical.wavelength_shifting.enable = true;
-        opts.optical.wavelength_shifting2.enable = true;
+        opts.optical = {};
+        CELER_ENSURE(opts.optical);
         return opts;
     }
 };
@@ -352,10 +350,8 @@ class LarSphereExtramat : public GeantImporterTest
     GeantPhysicsOptions build_geant_options() const override
     {
         auto opts = GeantImporterTest::build_geant_options();
-        opts.optical.absorption = true;
-        opts.optical.rayleigh_scattering = true;
-        opts.optical.wavelength_shifting.enable = true;
-        opts.optical.wavelength_shifting2.enable = true;
+        opts.optical = {};
+        CELER_ENSURE(opts.optical);
         return opts;
     }
 };
@@ -1656,7 +1652,7 @@ TEST_F(LarSphere, optical)
     // Material scintillation
     constexpr auto tol = SoftEqual<real_type>{}.rel();
     EXPECT_REAL_EQ(1, scint.resolution_scale);
-    EXPECT_REAL_EQ(50000, scint.material.yield_per_energy);
+    EXPECT_REAL_EQ(5000, scint.material.yield_per_energy);
     EXPECT_EQ(3, scint.material.components.size());
     std::vector<double> components;
     for (auto const& comp : scint.material.components)
@@ -1792,8 +1788,8 @@ TEST_F(LarSphere, optical)
 
         auto const& mat = optical.wls;
         EXPECT_TRUE(mat);
-        EXPECT_REAL_EQ(3, mat.mean_num_photons);
-        EXPECT_REAL_EQ(6e-9, to_sec(mat.time_constant));
+        EXPECT_SOFT_EQ(0.456, mat.mean_num_photons);
+        EXPECT_SOFT_EQ(6e-9, to_sec(mat.time_constant));
 
         std::vector<double> abslen_grid, comp_grid;
         for (auto i : range(mfp.x.size()))
@@ -1805,9 +1801,9 @@ TEST_F(LarSphere, optical)
         }
 
         static real_type const expected_abslen_grid[]
-            = {1.3778e-06, 86.4473, 1.55e-05, 0.000296154};
+            = {1.3778e-06, 0.1, 1.55e-05, 0.01};
         static double const expected_comp_grid[]
-            = {1.3778e-06, 10, 1.55e-05, 20};
+            = {1.3778e-06, 0.1, 1e-05, 0.9};
         EXPECT_VEC_SOFT_EQ(expected_abslen_grid, abslen_grid);
         EXPECT_VEC_SOFT_EQ(expected_comp_grid, comp_grid);
     }
@@ -1823,7 +1819,7 @@ TEST_F(LarSphere, optical)
 
         auto const& mat = optical.wls2;
         EXPECT_TRUE(mat);
-        EXPECT_REAL_EQ(2, mat.mean_num_photons);
+        EXPECT_REAL_EQ(0.123, mat.mean_num_photons);
         EXPECT_REAL_EQ(6e-9, to_sec(mat.time_constant));
 
         std::vector<double> abslen_grid, comp_grid;
@@ -1836,7 +1832,7 @@ TEST_F(LarSphere, optical)
         }
 
         static double const expected_abslen_grid[]
-            = {1.3778e-06, 86.4473, 1.55e-05, 0.000296154};
+            = {1.3778e-06, 0.1, 1.55e-05, 0.01};
         static double const expected_comp_grid[]
             = {1.771e-06, 0.3, 2.484e-06, 0.8};
         EXPECT_VEC_NEAR(

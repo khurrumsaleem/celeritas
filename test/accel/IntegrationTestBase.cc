@@ -94,12 +94,12 @@ class RunAction final : public G4UserRunAction
     void BeginOfRunAction(G4Run const* run) final
     {
         CELER_LOG_LOCAL(debug) << "RunAction::BeginOfRunAction";
-        test_->BeginOfRunAction(run);
+        CELER_TRY_HANDLE(test_->BeginOfRunAction(run), this->handle_exception);
     }
     void EndOfRunAction(G4Run const* run) final
     {
         CELER_LOG_LOCAL(debug) << "RunAction::EndOfRunAction";
-        test_->EndOfRunAction(run);
+        CELER_TRY_HANDLE(test_->EndOfRunAction(run), this->handle_exception);
         if (tracing_)
         {
             CELER_LOG_LOCAL(debug) << "Flushing Perfetto trace";
@@ -107,7 +107,7 @@ class RunAction final : public G4UserRunAction
         }
     }
 
-    // TODO: push exception onto a vector that can be checked
+    // TODO: push exception onto a vector so we can do validation testing
     void handle_exception(std::exception_ptr ep)
     {
         try
@@ -120,13 +120,15 @@ class RunAction final : public G4UserRunAction
             if (cstring_equal(d.which, "Geant4"))
             {
                 // GeantExceptionHandler wrapped this error
-                FAIL() << '(' << thread_label() << ',' << d.condition
-                       << "): from " << d.file << ": " << d.what;
+                FAIL() << "GeantExceptionHandler caught runtime error ("
+                       << thread_label() << ',' << d.condition << "): from "
+                       << d.file << ": " << d.what;
             }
             else
             {
                 // Some other error
-                FAIL() << "From " << thread_description() << ": " << e.what();
+                FAIL() << "Caught runtime error from " << thread_description()
+                       << ": " << e.what();
             }
         }
         catch (std::exception const& e)
@@ -149,6 +151,17 @@ class EventAction final : public G4UserEventAction
 
     void BeginOfEventAction(G4Event const* event) final
     {
+        if (test_->HasFatalFailure())
+        {
+            CELER_LOG_LOCAL(critical)
+                << "Cancelling event " << event->GetEventID()
+                << " due to fatal test failure";
+            if (auto* event_mgr = G4EventManager::GetEventManager())
+            {
+                event_mgr->AbortCurrentEvent();
+            }
+            return;
+        }
         CELER_LOG_LOCAL(debug) << "EventAction::BeginOfEventAction";
         test_->BeginOfEventAction(event);
     }
@@ -174,6 +187,13 @@ class ActionInitialization final : public G4VUserActionInitialization
                 test_->make_unique_filename(".perf.proto"));
             tracing_->start();
         }
+    }
+
+    ~ActionInitialization()
+    {
+        CELER_TRY_HANDLE((CELER_LOG_LOCAL(debug)
+                          << R"(Tearing down action initialization)"),
+                         static_cast<void>);
     }
 
     void BuildForMaster() const final
@@ -389,7 +409,7 @@ auto LarSphereIntegrationMixin::make_primary_input() const -> PrimaryInput
     result.energy = inp::MonoenergeticDistribution{MevEnergy{10}};
     result.shape = inp::PointDistribution{from_cm({99, 0.1, 0})};
     result.angle = inp::IsotropicDistribution{};
-    result.num_events = 4;
+    result.num_events = 4;  // Overridden with BeamOn
     result.primaries_per_event = 10;
     return result;
 }
@@ -413,13 +433,23 @@ auto LarSphereIntegrationMixin::make_sens_det(std::string const& sd_name)
  */
 void LarSphereIntegrationMixin::process_hit(G4Step const* step)
 {
-    ASSERT_TRUE(step);
-    ASSERT_TRUE(step->GetTrack());
+    if (!step || !step->GetTrack())
+    {
+        // Reduce testing overhead: google assertions allocate memory
+        ASSERT_TRUE(step);
+        ASSERT_TRUE(step->GetTrack());
+        return;
+    }
+
     auto& track = *step->GetTrack();
-    EXPECT_GT(track.GetWeight(), 0);
-    EXPECT_TRUE(track.GetVolume());
-    // Since we don't have any detectors on the boundary of the problem:
-    EXPECT_TRUE(track.GetNextVolume());
+    if (!(track.GetWeight() > 0) || !track.GetVolume()
+        || !track.GetNextVolume())
+    {
+        EXPECT_GT(track.GetWeight(), 0);
+        EXPECT_TRUE(track.GetVolume());
+        // Since we don't have any detectors on the boundary of the problem:
+        EXPECT_TRUE(track.GetNextVolume());
+    }
 }
 
 //---------------------------------------------------------------------------//
