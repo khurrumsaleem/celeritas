@@ -213,15 +213,32 @@ fill_vec_import_scint_comp(detail::GeantMaterialPropertyGetter& get_property,
     {
         bool any_found = false;
         auto get = [&](double* dst, std::string const& ext, ImportUnits u) {
-            any_found |= get_property(dst, prefix + ext, comp_idx, u);
+            bool one_found = get_property(dst, prefix + ext, comp_idx, u);
+            any_found = any_found || one_found;
+            return one_found;
         };
 
         ImportScintComponent comp;
         get(&comp.yield_frac, "YIELD", ImportUnits::inv_mev);
 
         // Custom-defined properties not available in G4MaterialPropertyIndex
-        get(&comp.lambda_mean, "LAMBDAMEAN", ImportUnits::len);
-        get(&comp.lambda_sigma, "LAMBDASIGMA", ImportUnits::len);
+        for (auto&& [prop, label] : {
+                 std::pair{&comp.lambda_mean, "LAMBDAMEAN"},
+                 std::pair{&comp.lambda_sigma, "LAMBDASIGMA"},
+             })
+        {
+            if (get_property(
+                    prop, "CELER_" + prefix + label, comp_idx, ImportUnits::len))
+            {
+                any_found = true;
+            }
+            else if (get(prop, label, ImportUnits::len))
+            {
+                CELER_LOG(warning)
+                    << "Deprecated property name " << prefix << label
+                    << ": use CELER_" << prefix << label;
+            }
+        }
 
         // Rise time is not defined for particle type in Geant4
         get(&comp.rise_time, "RISETIME", ImportUnits::time);
@@ -267,9 +284,9 @@ fill_vec_import_scint_comp(detail::GeantMaterialPropertyGetter& get_property,
                                "as a Gaussian ";
                     }
                     CELER_LOG(info)
-                        << "Estimated custom properties " << prefix
+                        << "Estimated custom properties CELER_" << prefix
                         << "LAMBDAMEAN" << comp_idx << "=" << comp.lambda_mean
-                        << " and " << prefix << "LAMBDASIGMA" << comp_idx
+                        << " and CELER_" << prefix << "LAMBDASIGMA" << comp_idx
                         << "=" << comp.lambda_sigma
                         << " from Geant4-defined property " << name;
                 }
@@ -917,14 +934,15 @@ std::vector<ImportRegion> import_regions()
  * Return a populated \c ImportProcess vector.
  */
 auto import_processes(GeantImporter::DataSelection selected,
-                      std::vector<inp::Particle> const& particles,
-                      std::vector<ImportElement> const& elements,
-                      std::vector<ImportPhysMaterial> const& materials,
                       detail::GeoOpticalIdMap const& geo_to_opt,
                       ImportData& imported)
 {
     ParticleFilter include_particle{selected.processes};
     ProcessFilter include_process{selected.processes};
+
+    auto const& particles = imported.particles;
+    auto const& elements = imported.elements;
+    auto const& materials = imported.phys_materials;
 
     auto& processes = imported.processes;
     auto& msc_models = imported.msc_models;
@@ -1419,12 +1437,7 @@ ImportData GeantImporter::operator()(DataSelection const& selected)
         }
         if (selected.processes != DataSelection::none)
         {
-            import_processes(selected,
-                             imported.particles,
-                             imported.elements,
-                             imported.phys_materials,
-                             geo_to_opt,
-                             imported);
+            import_processes(selected, geo_to_opt, imported);
 
             if (have_process(ImportProcessClass::mu_pair_prod))
             {
