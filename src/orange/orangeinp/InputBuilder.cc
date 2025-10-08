@@ -49,6 +49,7 @@ void write_protos(detail::ProtoMap const& map, std::string const& filename)
 
 //---------------------------------------------------------------------------//
 //! Helper struct to save JSON to a file
+// (TODO: could use jsonl, one line per proto?)
 class JsonProtoOutput
 {
   public:
@@ -71,7 +72,7 @@ class JsonProtoOutput
     //! Write debug information to a file
     void write(std::string const& filename) const
     {
-        CELER_ASSERT(!output_.empty());
+        CELER_ASSERT(*this);
         std::ofstream outf(filename);
         CELER_VALIDATE(
             outf, << "failed to open output file at \"" << filename << '"');
@@ -79,6 +80,9 @@ class JsonProtoOutput
 
         CELER_LOG(info) << "Wrote ORANGE debug info to " << filename;
     }
+
+    //! Whether output is to be written
+    explicit operator bool() const { return !output_.empty(); }
 
   private:
     nlohmann::json output_;
@@ -110,9 +114,9 @@ auto InputBuilder::operator()(ProtoInterface const& global) const -> result_type
     // Construct the hierarchy of protos
     detail::ProtoMap const protos{global};
     CELER_ASSERT(protos.find(&global) == orange_global_universe);
-    if (!opts_.proto_output_file.empty())
+    if (!opts_.objects_output_file.empty())
     {
-        write_protos(protos, opts_.proto_output_file);
+        write_protos(protos, opts_.objects_output_file);
     }
 
     // Build surfaces and metadata
@@ -121,7 +125,7 @@ auto InputBuilder::operator()(ProtoInterface const& global) const -> result_type
     detail::ProtoBuilder builder(&result, protos, [&] {
         detail::ProtoBuilder::Options pbopts;
         pbopts.tol = opts_.tol;
-        if (!opts_.debug_output_file.empty())
+        if (!opts_.csg_output_file.empty())
         {
             debug_outp = JsonProtoOutput{protos.size()};
             pbopts.save_json = std::ref(debug_outp);
@@ -134,9 +138,9 @@ auto InputBuilder::operator()(ProtoInterface const& global) const -> result_type
         protos.at(univ_id)->build(builder);
     }
 
-    if (!opts_.debug_output_file.empty())
+    if (debug_outp)
     {
-        debug_outp.write(opts_.debug_output_file);
+        debug_outp.write(opts_.csg_output_file);
     }
 
     CELER_ENSURE(result);
