@@ -20,6 +20,10 @@ namespace test
 {
 class GenericGeoTestInterface;
 
+constexpr bool using_surface_vg = CELERITAS_VECGEOM_SURFACE;
+constexpr bool using_solids_vg = CELERITAS_VECGEOM_VERSION
+                                 && !CELERITAS_VECGEOM_SURFACE;
+
 //---------------------------------------------------------------------------//
 /*!
  * Test the CMS EE (reflecting) geometry.
