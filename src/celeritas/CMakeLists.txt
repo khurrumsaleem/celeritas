@@ -237,6 +237,14 @@ if(CELERITAS_USE_Geant4)
     ext/detail/TrackProcessor.cc
   )
 
+  if(Geant4_VERSION VERSION_GREATER_EQUAL 11.0)
+    # NOTE: G4GammaNuclearXS is unavailable for 10.6 or lower,
+    # incomplete until version 11
+    list(APPEND _cg4_sources
+      g4/EmExtraPhysicsHelper.cc
+    )
+  endif()
+
   celeritas_get_g4libs(_cg4_libs
     global geometry materials processes run physicslists tasking
   )
