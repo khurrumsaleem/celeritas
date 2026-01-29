@@ -80,6 +80,7 @@ set(_sources
   global/StepperTestBase.cc
   grid/CalculatorTestBase.cc
   io/EventIOTestBase.cc
+  mucf/MucfInteractorHostTestBase.cc
   neutron/NeutronTestBase.cc
   optical/OpticalMockTestBase.cc
   optical/OpticalTestBase.cc
@@ -145,6 +146,12 @@ celeritas_add_test(Units.test.cc)
 
 # Muon
 celeritas_add_test(decay/MuDecay.test.cc ${_needs_double})
+
+#-----------------------------------------------------------------------------#
+# MuCF
+
+# Interactors
+celeritas_add_test(mucf/DTMucfInteractor.test.cc ${_needs_double})
 
 #-----------------------------------------------------------------------------#
 # EM
