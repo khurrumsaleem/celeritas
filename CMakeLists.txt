@@ -21,6 +21,18 @@ include(CMakeDependentOption)
 include(CMakePackageConfigHelpers)
 
 #----------------------------------------------------------------------------#
+# Warn about and remove old options
+#----------------------------------------------------------------------------#
+foreach(_var IN ITEMS BUILD_DEMOS USE_JSON USE_Python USE_SWIG)
+  set(_var CELERITAS_${_var})
+  if(DEFINED ${_var})
+    message(WARNING "Config variable '${_var}' was removed: unsetting it")
+    unset(${_var})
+    unset(${_var} CACHE)
+  endif()
+endforeach()
+
+#----------------------------------------------------------------------------#
 # PACKAGE OPTIONS
 #----------------------------------------------------------------------------#
 
@@ -91,7 +103,7 @@ else()
   set(_needs_g4vg OFF)
 endif()
 
-if(BUILD_TESTING OR CELERITAS_BUILD_DOCS)
+if(BUILD_TESTING OR CELERITAS_BUILD_DOCS OR CELERITAS_BUILD_TESTS)
   set(_needs_python ON)
 else()
   set(_needs_python OFF)
