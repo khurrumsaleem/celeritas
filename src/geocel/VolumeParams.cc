@@ -48,9 +48,15 @@ int calc_num_volume_levels(HostVal<VolumeParamsData> const& params)
     CELER_EXPECT(params.scalars.world);
     int max_level{0};
 
+    std::vector<bool> visited(params.scalars.num_volumes, false);
     VolumeVisitor visit_vol{VolumeDataAccessor<Ownership::value>{params}};
     visit_vol(
-        [&max_level](VolumeId, int level) {
+        [&max_level, &visited](VolumeId v, int level) {
+            if (visited[v.unchecked_get()])
+            {
+                return false;
+            }
+            visited[v.unchecked_get()] = true;
             CELER_ASSERT(level >= 0);
             max_level = std::max(max_level, level);
             return true;
@@ -123,8 +129,8 @@ VolumeParams::VolumeParams(inp::Volumes const& in)
 
     // TODO: warn about duplicate labels (see LabelIdMultiMap::duplicates)
 
-    auto const num_volumes = this->num_volumes();
-    auto const num_volume_instances = this->num_volume_instances();
+    auto const num_volumes = v_labels_.size();
+    auto const num_volume_instances = vi_labels_.size();
 
     // Aggregate parents: scan all volume instances and record which volumes
     // each instance belongs to
@@ -176,6 +182,8 @@ VolumeParams::VolumeParams(inp::Volumes const& in)
     // Set scalars
     CELER_EXPECT(!in.world || in.world < in.volumes.size());
     host_data.scalars.world = in.world;
+    host_data.scalars.num_volumes = num_volumes;
+    host_data.scalars.num_volume_instances = num_volume_instances;
 
     // Calculate depth via VolumeVisitor
     if (in.world)
