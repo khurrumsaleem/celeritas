@@ -8,6 +8,8 @@
 
 #include <cstddef>
 
+#include "corecel/Types.hh"
+
 #include "Span.hh"
 
 #include "detail/LdgSpanImpl.hh"
@@ -25,6 +27,17 @@ namespace celeritas
  */
 template<class T, std::size_t Extent = dynamic_extent>
 using LdgSpan = Span<detail::LdgWrapper<T>, Extent>;
+
+//---------------------------------------------------------------------------//
+/*!
+ * An LdgSpan when referencing compatible types, or Span otherwise.
+ *
+ * Note that T must be const.
+ */
+template<class T, std::size_t Extent = dynamic_extent>
+using AutoLdgSpan = Span<
+    std::conditional_t<detail::is_ldg_supported_v<T>, detail::LdgWrapper<T>, T>,
+    Extent>;
 
 //---------------------------------------------------------------------------//
 /*!
@@ -51,7 +64,7 @@ CELER_CONSTEXPR_FUNCTION auto to_array(Span<detail::LdgWrapper<T const>, N> s)
 //! Convert an LdgSpan to a regular Span, \em not using \c ldg
 template<class T, std::size_t N>
 CELER_CONSTEXPR_FUNCTION Span<T const, N>
-remove_ldg_wrapper(LdgSpan<T const, N> cont)
+remove_ldg_wrapper(Span<detail::LdgWrapper<T const>, N> cont)
 {
     return {cont.data(), cont.size()};
 }
