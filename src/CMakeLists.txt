@@ -167,7 +167,7 @@ if(CELERITAS_USE_covfie)
   endif()
   target_link_libraries(Extcovfie INTERFACE ${_covfie_libs})
 
-  if(CELERITAS_USE_CUDA AND covfie_VERSION VERSION_LESS_EQUAL 0.15.3)
+  if(CELERITAS_USE_CUDA AND covfie_VERSION VERSION_LESS_EQUAL 0.15.5)
     # See https://github.com/acts-project/covfie/pull/98 :
     # avoid warning/runtime failure due to use of std::clamp in device code
     target_compile_options(Extcovfie
