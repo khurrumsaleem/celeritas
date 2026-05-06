@@ -151,7 +151,6 @@ auto InputBuilder::operator()(ProtoInterface const& global) const -> result_type
         !var.empty())
     {
         size_type mls = std::stoul(var);
-        CELER_EXPECT(mls > 0);
         result.construction_opts.bih_options.max_leaf_size = mls;
     }
 
@@ -159,8 +158,6 @@ auto InputBuilder::operator()(ProtoInterface const& global) const -> result_type
         !var.empty())
     {
         size_type dl = std::stoul(var);
-        CELER_EXPECT(dl > 0);
-        CELER_EXPECT(dl <= inp::BIHBuilder::max_depth_limit);
         result.construction_opts.bih_options.depth_limit = dl;
     }
 
@@ -168,7 +165,6 @@ auto InputBuilder::operator()(ProtoInterface const& global) const -> result_type
         !var.empty())
     {
         size_type dl = std::stoul(var);
-        CELER_EXPECT(dl > 0);
         result.construction_opts.bih_options.num_part_cands = dl;
     }
 
